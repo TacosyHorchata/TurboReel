@@ -243,8 +243,8 @@ async def main():
                         ai_short_gen.generate_subtitles(audio_path)  # Generate subtitles
                         logging.info(f"Subtitles generated successfully")
                         image_paths = image_handler.get_images_from_subtitles("assets/subtitles.srt", f"reddit thread about {video_topic}")
-                        logging.info(f"Downloaded images succesfully")
-                        logging.info(f"Added images to video succesfully")
+                        logging.info(f"Downloaded images successfully")
+                        logging.info(f"Added images to video successfully")
                         # Add audio and subtitles to the cut video
                         clip = ai_short_gen.add_audio_and_captions_to_video(cut_video_path, audio_path, 'assets/subtitles.srt')  # Add audio and subtitles to the cut video
                         ai_short_gen.add_images_to_video(clip, image_paths) 
