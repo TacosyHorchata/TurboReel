@@ -1,9 +1,11 @@
 annotated-types==0.7.0
 anyio==4.6.0
+blinker==1.8.2
 Brotli==1.1.0
 certifi==2024.8.30
 chardet==5.2.0
 charset-normalizer==3.3.2
+click==8.1.7
 decorator==4.4.2
 distro==1.9.0
 exceptiongroup==1.2.2
@@ -13,12 +15,16 @@ httpx==0.27.2
 idna==3.10
 imageio==2.35.1
 imageio-ffmpeg==0.5.1
+itsdangerous==2.2.0
+Jinja2==3.1.4
 jiter==0.5.0
+MarkupSafe==3.0.0
 moviepy==1.0.3
 mutagen==1.47.0
 numpy==2.1.1
 openai==1.51.0
 opencv-python==4.10.0.84
+packaging==24.1
 pillow==10.4.0
 proglog==0.1.10
 pycryptodomex==3.21.0
@@ -26,6 +32,7 @@ pydantic==2.9.2
 pydantic_core==2.23.4
 pysrt==1.1.2
 python-dotenv==1.0.1
+PyYAML==6.0.2
 requests==2.32.3
 six==1.16.0
 sniffio==1.3.1
@@ -33,6 +40,7 @@ tqdm==4.66.5
 typing_extensions==4.12.2
 urllib3==2.2.3
 websockets==13.1
+Werkzeug==3.0.4
 whisper==1.1.10
 youtube-dl==2021.12.17
 yt-dlp==2024.9.27

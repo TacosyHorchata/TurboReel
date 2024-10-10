@@ -16,7 +16,7 @@ system_prompt: |
   - The story must be between 120 and 140 words, with no moral conclusion.
   - Ensure the content is spicy, unusual, and highly entertaining.
   - The language should be casual and relatable, as if you’re a friend sharing a story.
-  - Start the story with "I" and directly address the question.
+  - The story should begin with "I" and dive straight into the narrative, without titles or conclusions.
 
 user_prompt: |
   - New generated story. The story must be highly unusual and spicy, surprising listeners and hooking them into the narrative. 

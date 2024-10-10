@@ -2,6 +2,7 @@ import requests
 import pysrt  
 import logging
 import os
+import re
 from openai import OpenAI 
 
 from dotenv import load_dotenv  # To load environment variables
@@ -97,7 +98,7 @@ class ImageHandler:
             for sub in subs:
                 current_text.append(sub.text)
                 current_duration += (sub.end - sub.start).milliseconds  # Use seconds attribute
-                if current_duration >= seconds_per_keyword*1000:  # Check if we reached 10 seconds
+                if current_duration >= seconds_per_keyword*1000:  # Check if we reached 5 seconds
                     keywords.append(' '.join(current_text))  # Join the accumulated text
                     current_text = []  # Reset for the next batch
                     current_duration = 0  # Reset duration
@@ -113,7 +114,21 @@ class ImageHandler:
         try:
             completion = self.openai.chat.completions.create(  # Async call to create chat completion
                 model="gpt-3.5-turbo",  # Updated model name
-                messages=[{'role':'system','content':'You are a query generation system designed to enhance video automation. Your task is to receive phrases and generate concise queries that will help in finding suitable images for the given scene. Please create a query based on the provided phrase and the context of the video.'},{'role': 'user', 'content': f' \n Original phrase: "{keyword}" \n Video topic: {video_context}'}],
+                temperature=0.25,
+                messages = [
+                    {
+                        'role': 'system',
+                        'content': 
+                            '''You are a query generation system designed to enhance video automation. "
+                            Your task is to take provided phrases and generate concise queries that will assist in finding appropriate images for the given scene.
+                            Always produce a short, clear query based on the original phrase and the context of the video.
+                            Example of ideal output: 'Sunset in California', 'Halloween costume', 'Friends meeting'.'''
+                    },
+                    {
+                        'role': 'user',
+                        'content': f'Original phrase: "{keyword}"\nVideo topic: {video_context}'
+                    }
+                ],
                 max_tokens=200
             )
             refined_keyword = completion.choices[0].message.content.strip()
@@ -128,12 +143,31 @@ class ImageHandler:
         image_paths = []
 
         for keyword in keywords:
-            refined_keyword = self.refine_keyword_with_openai(keyword, video_context)  # Refine the keyword
+
+            try:
+                refined_keyword = self.refine_keyword_with_openai(keyword, video_context)  # Refine the keyword
+            except Exception as e:
+                logging.error(f"Error refining keyword: {keyword}") 
+                refined_keyword = ''  # Handle any exception that may occur
+
             logging.info(f"Searching image for keywords: {refined_keyword}")
-            image_urls = self.search_pexels_images(refined_keyword)  # Search for images using the refined keyword
+
+            try:
+                image_urls = self.search_pexels_images(refined_keyword)  # Search for images using the refined keyword
+            except Exception as e:
+                logging.error(f"Error searching for images: {e}")  # Log the error
+                image_urls = None 
+
             if image_urls:
+                
+                # Replace spaces with underscores, remove double quotes, and filter out weird symbols
+                refined_keyword = refined_keyword.replace(' ', '_')  # Replace spaces with underscores
+                refined_keyword = refined_keyword.replace('"', '')   # Remove double quotes
+                refined_keyword = re.sub(r'[^a-zA-Z0-9_]', '', refined_keyword)  # Remove weird symbols (keep alphanumeric and underscores)
+
                 img_path = f"assets/images/subtitle_image_{refined_keyword}.jpg"
                 logging.info(f"Downloading image: {image_urls[0]}")  # Unique filename for each image
                 if self.download_image(image_urls[0], img_path):
                     image_paths.append(img_path)  # Add the downloaded image path to the list
+
         return image_paths
