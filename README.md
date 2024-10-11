@@ -51,18 +51,20 @@ Ready to dive in? Here’s how to get started with TurboReelGPT:
    ```bash
    pip install -r requirements.txt
    ```
-
 6. **Grab Your API Keys**: You’ll need keys for OPENAI (for generating scripts) and PEXELS (for fetching images). Get your PEXELS API key [here](https://www.pexels.com/api/key/).
 
-7. **Set Up Your Config**: Create a `config.yaml` file in the root folder. Clone `config-example.yaml`, fill it in with your API keys and desired settings.
+7. **Set Up Your Config**: Create a `config.yaml` file in the root folder. Clone `config-example.yaml` and fill it in with your API keys and desired settings. You only need to configure settings other than the API keys if you're not using the Gradio UI.
 
-8. **Launch the App**:
+8. **Gradio UI**: Run:
    ```bash
-   python app.py
+   python3 GUI.py
    ```
+Fill in all the inputs and generate your video!
 
-   **Heads Up**: This project uses YT-DLP for downloading YouTube videos, and it needs cookies to work properly. So, automating this in a VM might not be the best idea. Instead, download some videos manually, toss them in the assets folder, and change the "video path" in `app.py` (around line 219) to point to your downloaded videos.
+![GUI Preview](https://cdn.discordapp.com/attachments/1286824377949884535/1294179188642938901/image.png)
 
+   **Heads Up**: This project uses YT-DLP for downloading YouTube videos, and it requires cookies to work properly. Automating this in a VM might not be the best idea.
+   
 ## 🤗 Want to Help?
 
 We’d love your help! If you’re excited to contribute to TurboReelGPT, here’s how you can jump in:
@@ -72,4 +74,4 @@ We’d love your help! If you’re excited to contribute to TurboReelGPT, here�
 3. **Make Your Changes and Commit Them**.
 4. **Push Your Branch** and submit a pull request.
 
-- **Join Our Crew**: Let’s connect! Join us and other creators on our [Discord server](https://discord.gg/4dnynCSN). We can’t wait to see what you create!
+- **Join Our Crew**: Let’s connect! Join us and other creators on our [Discord server](https://discord.gg/bby6DYsCPu). We can’t wait to see what you create!
