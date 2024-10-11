@@ -11,15 +11,8 @@ Just like Midjourney changed the game for images, TurboReelGPT is here to transf
 
 ## 🚀 Our Roadmap
 
-1. **Storytelling**: Work on improving how we tell stories in videos.
-2. **Stock Images Galore**: Add more stock images for users to choose from.
-3. **More Voice Options**: Introduce even more human-like voice choices.
-4. **AI-Generated Images**: Let users create and use AI-generated images in their videos.
-5. **Bring in Human Avatars**: Develop realistic avatars for users to include in their videos.
-6. **Animate Away**: Add more animations to keep videos exciting.
-7. **AI for Image Recognition**: Use AI to recognize images and sync them better with videos.
-8. **Fun Video Remixing**: Let users remix and play around with existing videos.
-
+**Engagement**: Make videos more engaging — our one and only North Star
+   
 ## 💡 Getting Started
 
 Ready to dive in? Here’s how to get started with TurboReelGPT:
@@ -61,7 +54,7 @@ Ready to dive in? Here’s how to get started with TurboReelGPT:
    ```
 Fill in all the inputs and generate your video!
 
-![GUI Preview](https://cdn.discordapp.com/attachments/1286824377949884535/1294179188642938901/image.png)
+![GUI Preview](https://drive.google.com/uc?export=view&id=15xFGVslmEBnPxu-3tjQE7lMiz0KEI5hC)
 
    **Heads Up**: This project uses YT-DLP for downloading YouTube videos, and it requires cookies to work properly. Automating this in a VM might not be the best idea.
    
