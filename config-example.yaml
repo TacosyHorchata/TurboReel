@@ -5,12 +5,14 @@ api_keys:
   PEXELS_API_KEY: "kGH..."  # Your Pexels API key
 
 assets: 
-  YOUTUBE_URL: "https://www.youtube.com/watch?v=eeUqAE9EH6w"  # URL of the YouTube video
+  VIDEO_PATH_OR_URL: "video_path" #options (video_path, video_url) this is used to determine which path to use in generateVideo.py
+  VIDEO_PATH: "downloads/minecraft_parkour.mp4"
+  VIDEO_YOUTUBE_URL: "https://www.youtube.com/watch?v=eeUqAE9EH6w"  # URL of the YouTube video
 
 video_parameters:
   VIDEO_SCRIPT_TYPE: "based_on_topic" #options (based_on_topic, ready_made_script)
   VIDEO_TOPIC: "football"  # The topic of the video
-  VIDEO_SCRIPT: | #leave empty to generate based on the video_topic
+  VIDEO_SCRIPT: | 
   
     Hey everyone! Let’s dive into something that’s transforming our world: artificial intelligence!
 

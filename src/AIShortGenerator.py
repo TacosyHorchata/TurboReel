@@ -7,6 +7,7 @@ import pysrt
 from yt_dlp import YoutubeDL
 from pathlib import Path
 import uuid
+import re  # Added import for regular expression operations
 
 from dotenv import load_dotenv
 
@@ -19,12 +20,15 @@ logging.basicConfig(level=logging.INFO)
 class AIShortGenerator:
     def __init__(self, openai_api_key):
         self.openai = OpenAI(api_key=openai_api_key)
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
     def download_video(self, youtube_url):
         try:
+            downloads_dir = os.path.join(self.base_dir, '..', 'downloads')
+            os.makedirs(downloads_dir, exist_ok=True)
             ydl_opts = {
                 'format': 'bestvideo[height<=720]+bestaudio',
-                'outtmpl': 'downloads/%(title)s.%(ext)s',
+                'outtmpl': os.path.join(downloads_dir, '%(title)s.%(ext)s'),
                 'postprocessors': [{
                     'key': 'FFmpegVideoConvertor',
                     'preferedformat': 'mp4',
@@ -40,10 +44,10 @@ class AIShortGenerator:
                     video_path = video_path.rsplit('.', 1)[0] + '.mp4'
 
             logging.info("Video downloaded successfully.")
-            return video_path  # Return the path of the downloaded video
+            return video_path
         except Exception as e:
-            logging.error(f"Error downloading video: {e}")  # Log the error message
-            return None  # Ensure to return None on error
+            logging.error(f"Error downloading video: {e}")
+            return None
 
     def cut_video(self, video_path, start_time, end_time):
         if not os.path.exists(video_path):
@@ -51,11 +55,15 @@ class AIShortGenerator:
             return
         try:
             unique_id = uuid.uuid4()
+            assets_dir = os.path.join(self.base_dir, '..', 'assets')
+            os.makedirs(assets_dir, exist_ok=True)
+            output_path = os.path.join(assets_dir, f"cut_video_{unique_id}.mp4")
+            
             clip = VideoFileClip(video_path)
             cut_clip = clip.subclip(start_time, end_time)
-            cut_clip.write_videofile(f"assets/cut_video_{unique_id}.mp4")
+            cut_clip.write_videofile(output_path)
             logging.info("Video cut successfully.")
-            return f"assets/cut_video_{unique_id}.mp4"  # Return the path of the cut video
+            return output_path
         except Exception as e:
             logging.error(f"Error cutting video: {e}")
 
@@ -70,22 +78,31 @@ class AIShortGenerator:
                 ]
             )
             logging.info("Script generated successfully.")
-            return completion.choices[0].message.content  # Access the message content correctly
+
+            response = completion.choices[0].message.content  # Access the message content correctly
+            response = re.sub(r"(?i)Reddit question", "", response)  # Case-insensitive replacement
+            response = re.sub(r"(?i)Youtube short story", "", response)  # Case-insensitive replacement
+            return response
+
         except Exception as e:
             logging.error(f"Error generating script: {e}")  # Log the error message
             return ""  # Return an empty string on error
 
     def generate_subtitles(self, audio_file):
         try:
-            subtitles = self.speech_to_text(audio_file)  # Get the subtitles from speech_to_text
+            subtitles = self.speech_to_text(audio_file)
             srt_file = pysrt.SubRipFile()
 
             for index, (start, end, text) in enumerate(subtitles):
                 srt_file.append(pysrt.SubRipItem(index=index + 1, start=start, end=end, text=text))
+            
             unique_id = uuid.uuid4()
-            srt_file.save(f'assets/subtitles_{unique_id}.srt')  # Save as .srt
+            assets_dir = os.path.join(self.base_dir, '..', 'assets')
+            os.makedirs(assets_dir, exist_ok=True)
+            srt_path = os.path.join(assets_dir, f'subtitles_{unique_id}.srt')
+            srt_file.save(srt_path)
             logging.info("Subtitles generated and saved successfully.")
-            return f'assets/subtitles_{unique_id}.srt'
+            return srt_path
         except Exception as e:
             logging.error(f"Error generating subtitles: {e}")
 
@@ -121,15 +138,18 @@ class AIShortGenerator:
     async def generate_voice(self, script):
         try:
             unique_id = uuid.uuid4()
-            speech_file_path = f"assets/voice_{unique_id}.mp3"  # Define the path for the output file
-            response = self.openai.audio.speech.create(  # Create speech using the OpenAI API
+            assets_dir = os.path.join(self.base_dir, '..', 'assets')
+            os.makedirs(assets_dir, exist_ok=True)
+            speech_file_path = os.path.join(assets_dir, f"voice_{unique_id}.mp3")
+            
+            response = self.openai.audio.speech.create(
                 model="tts-1",
-                voice="nova",  # Adjust the voice as needed
-                input=script  # Use 'input' to provide the script
+                voice="nova",
+                input=script
             )
-            response.stream_to_file(speech_file_path)  # Stream the response to the specified file path
+            response.stream_to_file(speech_file_path)
             logging.info("Voice generated successfully.")
-            return speech_file_path  # Return the path of the generated audio
+            return speech_file_path
         except Exception as e:
             logging.error(f"Error generating voice: {e}")
 
@@ -181,11 +201,15 @@ class AIShortGenerator:
         for i, image_path in enumerate(images):
             try:
                 image_clip = ImageClip(image_path).set_duration(start_interval)  
-                image_clip = image_clip.set_position(('center', 70)).resize(height=video_clip.h / 3)  # Resize to fit video height
-                clips.append(image_clip.set_start(i * start_interval))  # Start each image clip at intervals
+                image_clip = image_clip.set_position(('center', 70)).resize(height=video_clip.h / 3)
+                clips.append(image_clip.set_start(i * start_interval))
             except Exception as e:
                 logging.error(f"Error processing image_path: {image_path}, {e}") 
         final_clip = CompositeVideoClip(clips)
         unique_id = uuid.uuid4()
-        final_clip.write_videofile(f"result/final_video_with_images_{unique_id}.mp4") # Save the final video with images
-        logging.info("Eureka!!!")
+        result_dir = os.path.join(self.base_dir, '..', 'result')
+        os.makedirs(result_dir, exist_ok=True)
+        output_path = os.path.join(result_dir, f"final_video_with_images_{unique_id}.mp4")
+        final_clip.write_videofile(output_path)
+        logging.info("Final video with images created successfully.")
+        return output_path

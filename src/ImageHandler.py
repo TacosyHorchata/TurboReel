@@ -12,10 +12,10 @@ load_dotenv()
 
 class ImageHandler:
     def __init__(self, pexels_api_key, openai_api_key):
-
         self.pexels_api_key = pexels_api_key
         self.openai_api_key = openai_api_key
         self.openai = OpenAI(api_key=self.openai_api_key)
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
     def search_pexels_images(self, query):
         """Search for images using Pexels API and return the URLs."""
@@ -76,10 +76,15 @@ class ImageHandler:
         try:
             response = requests.get(url, timeout=10)  # Timeout for network issues
             response.raise_for_status()  # Raise for HTTP errors
-            os.makedirs(os.path.dirname(filename), exist_ok=True)  # Ensure directory exists
-            with open(filename, 'wb') as f:
+            
+            # Use absolute path for saving images
+            assets_dir = os.path.join(self.base_dir, '..', 'assets', 'images')
+            os.makedirs(assets_dir, exist_ok=True)  # Ensure directory exists
+            
+            full_path = os.path.join(assets_dir, filename)
+            with open(full_path, 'wb') as f:
                 f.write(response.content)
-            return filename
+            return full_path
         except requests.exceptions.RequestException as e:
             logging.error(f"Failed to download image: {e}")
         except Exception as e:
@@ -165,9 +170,10 @@ class ImageHandler:
                 refined_keyword = refined_keyword.replace('"', '')   # Remove double quotes
                 refined_keyword = re.sub(r'[^a-zA-Z0-9_]', '', refined_keyword)  # Remove weird symbols (keep alphanumeric and underscores)
 
-                img_path = f"assets/images/subtitle_image_{refined_keyword}.jpg"
+                img_filename = f"subtitle_image_{refined_keyword}.jpg"
                 logging.info(f"Downloading image: {image_urls[0]}")  # Unique filename for each image
-                if self.download_image(image_urls[0], img_path):
-                    image_paths.append(img_path)  # Add the downloaded image path to the list
+                downloaded_path = self.download_image(image_urls[0], img_filename)
+                if downloaded_path:
+                    image_paths.append(downloaded_path)  # Add the downloaded image path to the list
 
         return image_paths
