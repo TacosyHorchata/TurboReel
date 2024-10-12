@@ -19,8 +19,8 @@ filelock==3.16.1
 Flask==3.0.3
 fsspec==2024.9.0
 gradio==5.0.1
-gradio_client==1.4.0
-gunicorn==23.0.0
+gradio_client
+gunicorn
 h11==0.14.0
 httpcore==1.0.6
 httpx==0.27.2
@@ -72,8 +72,8 @@ typing_extensions==4.12.2
 tzdata==2024.2
 urllib3==2.2.3
 uvicorn==0.31.1
-websockets==12.0
+websockets
 Werkzeug==3.0.4
 whisper==1.1.10
 youtube-dl==2021.12.17
-yt-dlp==2024.9.27
+yt-dlp
