@@ -195,16 +195,29 @@ class AIShortGenerator:
             logging.error(f"Error adding audio and subtitles to video: {e}")
 
     def add_images_to_video(self, video_clip, images):
-        """Add images to the video at specified intervals."""
+        """Add images to the video at specified intervals throughout the entire video duration."""
         clips = [video_clip]
-        start_interval = 5 # Display each image for 5 seconds
+        image_duration = 5  # Display each image for 5 seconds
+        video_duration = video_clip.duration
+        
         for i, image_path in enumerate(images):
-            try:
-                image_clip = ImageClip(image_path).set_duration(start_interval)  
-                image_clip = image_clip.set_position(('center', 70)).resize(height=video_clip.h / 3)
-                clips.append(image_clip.set_start(i * start_interval))
-            except Exception as e:
-                logging.error(f"Error processing image_path: {image_path}, {e}") 
+            if image_path is not None:
+                try:
+                    image_clip = ImageClip(image_path).set_duration(image_duration)
+                    image_clip = image_clip.set_position(('center', 70)).resize(height=video_clip.h / 3)
+                    
+                    # Calculate start time for each image
+                    start_time = i * image_duration
+                    
+                    # If the image would extend beyond the video duration, adjust its duration
+                    if start_time + image_duration > video_duration:
+                        image_clip = image_clip.set_duration(video_duration - start_time)
+                    
+                    clips.append(image_clip.set_start(start_time))
+                except Exception as e:
+                    logging.error(f"Error processing image_path: {image_path}, {e}")
+            # If image_path is None, we simply don't add an image for this interval
+        
         final_clip = CompositeVideoClip(clips)
         unique_id = uuid.uuid4()
         result_dir = os.path.join(self.base_dir, '..', 'result')

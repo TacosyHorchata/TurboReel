@@ -4,6 +4,7 @@ import logging
 import os
 import re
 from openai import OpenAI 
+import math
 
 from dotenv import load_dotenv  # To load environment variables
 
@@ -91,23 +92,36 @@ class ImageHandler:
             logging.error(f"Error while saving image: {e}")
         return None
 
-    def extract_keywords_from_subtitles(self, subtitles_file):
-        """Extract key phrases from subtitles."""
+    def extract_keywords_from_subtitles(self, subtitles_file, video_duration):
+        """Extract key phrases from subtitles based on video duration."""
         seconds_per_keyword = 5
         try:
             subs = pysrt.open(subtitles_file)
             keywords = []
             current_text = []
+            
+            # Calculate the number of keywords we should extract
+            num_keywords = math.ceil(video_duration / seconds_per_keyword)
+            
+            # Calculate the duration for each keyword
+            duration_per_keyword = video_duration / num_keywords
+            
             current_duration = 0
+            keyword_end_time = duration_per_keyword
             
             for sub in subs:
-                current_text.append(sub.text)
-                current_duration += (sub.end - sub.start).milliseconds  # Use seconds attribute
-                if current_duration >= seconds_per_keyword*1000:  # Check if we reached 5 seconds
-                    keywords.append(' '.join(current_text))  # Join the accumulated text
-                    current_text = []  # Reset for the next batch
-                    current_duration = 0  # Reset duration
+                if sub.start.seconds < keyword_end_time:
+                    current_text.append(sub.text)
+                else:
+                    keywords.append(' '.join(current_text))
+                    current_text = [sub.text]
+                    keyword_end_time += duration_per_keyword
+
+            # Add any remaining text as the last keyword
+            if current_text:
+                keywords.append(' '.join(current_text))
             
+            logging.info(f"Extracted {len(keywords)} keywords from subtitles.")
             return keywords
         except Exception as e:
             logging.error(f"Error extracting keywords from subtitles: {e}")
@@ -142,38 +156,37 @@ class ImageHandler:
             logging.error(f"Error calling OpenAI API: {e}")
             return keyword  # Return the original keyword on error
 
-    def get_images_from_subtitles(self, subtitles_file_path, video_context):
-        """Fetch relevant images based on the subtitles."""
-        keywords = self.extract_keywords_from_subtitles(subtitles_file_path)  # Extract keywords from subtitles
+    def get_images_from_subtitles(self, subtitles_file_path, video_context, video_duration):
+        """Fetch relevant images based on the subtitles and video duration."""
+        keywords = self.extract_keywords_from_subtitles(subtitles_file_path, video_duration)
         image_paths = []
 
         for keyword in keywords:
-
             try:
-                refined_keyword = self.refine_keyword_with_openai(keyword, video_context)  # Refine the keyword
+                refined_keyword = self.refine_keyword_with_openai(keyword, video_context)
             except Exception as e:
-                logging.error(f"Error refining keyword: {keyword}") 
-                refined_keyword = ''  # Handle any exception that may occur
+                logging.error(f"Error refining keyword: {keyword}")
+                refined_keyword = keyword  # Use original keyword if refinement fails
 
             logging.info(f"Searching image for keywords: {refined_keyword}")
 
             try:
-                image_urls = self.search_pexels_images(refined_keyword)  # Search for images using the refined keyword
+                image_urls = self.search_pexels_images(refined_keyword)
             except Exception as e:
-                logging.error(f"Error searching for images: {e}")  # Log the error
-                image_urls = None 
+                logging.error(f"Error searching for images: {e}")
+                image_paths.append(None)  # Add None for failed image search
+                continue
 
             if image_urls:
-                
-                # Replace spaces with underscores, remove double quotes, and filter out weird symbols
-                refined_keyword = refined_keyword.replace(' ', '_')  # Replace spaces with underscores
-                refined_keyword = refined_keyword.replace('"', '')   # Remove double quotes
-                refined_keyword = re.sub(r'[^a-zA-Z0-9_]', '', refined_keyword)  # Remove weird symbols (keep alphanumeric and underscores)
-
+                refined_keyword = re.sub(r'[^a-zA-Z0-9_]', '', refined_keyword.replace(' ', '_').replace('"', ''))
                 img_filename = f"subtitle_image_{refined_keyword}.jpg"
-                logging.info(f"Downloading image: {image_urls[0]}")  # Unique filename for each image
+                logging.info(f"Downloading image: {image_urls[0]}")
                 downloaded_path = self.download_image(image_urls[0], img_filename)
                 if downloaded_path:
-                    image_paths.append(downloaded_path)  # Add the downloaded image path to the list
+                    image_paths.append(downloaded_path)
+                else:
+                    image_paths.append(None)  # Add None for failed download
+            else:
+                image_paths.append(None)  # Add None if no image URLs found
 
         return image_paths

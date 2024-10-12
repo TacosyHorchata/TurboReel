@@ -160,7 +160,11 @@ async def generate_video(video_path_or_url='', video_path='', video_url='', vide
         logging.info(f"Subtitles generated successfully.")
 
         video_context = video_script if video_script_type == 'ready_made_script' else video_topic
-        image_paths = image_handler.get_images_from_subtitles(subtitles_path, video_context)
+        
+        # Get the duration of the cut video
+        cut_video_duration = VideoFileClip(cut_video_path).duration
+        
+        image_paths = image_handler.get_images_from_subtitles(subtitles_path, video_context, cut_video_duration)
         logging.info(f"Downloaded images successfully.")
 
         clip = ai_short_gen.add_audio_and_captions_to_video(cut_video_path, audio_path, subtitles_path)
