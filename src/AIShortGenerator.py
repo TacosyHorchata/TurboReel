@@ -220,7 +220,7 @@ class AIShortGenerator:
         
         final_clip = CompositeVideoClip(clips)
         unique_id = uuid.uuid4()
-        result_dir = os.path.join(self.base_dir, '..', 'result')
+        result_dir = os.path.abspath(os.path.join(self.base_dir, '../result'))
         os.makedirs(result_dir, exist_ok=True)
         output_path = os.path.join(result_dir, f"final_video_with_images_{unique_id}.mp4")
         final_clip.write_videofile(output_path)

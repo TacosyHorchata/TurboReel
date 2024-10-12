@@ -173,7 +173,7 @@ async def generate_video(video_path_or_url='', video_path='', video_url='', vide
         # Cleanup: Ensure temporary files are removed
         cleanup_files([audio_path, cut_video_path, subtitles_path], image_paths)
         
-        logging.info("FINAL OUTPUT PATH: ", output_path)
+        logging.info(f"FINAL OUTPUT PATH: {output_path}")
         return {"status": "success", "message": "Video generated successfully.", "output_path": output_path}
     
     except Exception as e:
