@@ -96,8 +96,8 @@ async def generate_video(video_path_or_url='', video_path='', video_url='', vide
         if video_script_type == 'ready_made_script':
             if not video_script:
                 raise ValueError("For 'ready_made_script', the video script should not be null.")
-            if len(video_script) > 400:
-                raise ValueError("The video script exceeds the 400 character limit.")
+            if len(video_script) > 700:
+                raise ValueError("The video script exceeds the 700 character limit.")
 
         elif video_script_type == 'based_on_topic':
             if not video_topic:

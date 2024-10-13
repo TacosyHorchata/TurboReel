@@ -169,7 +169,7 @@ class AIShortGenerator:
             subtitles = self.load_subtitles(subtitles_path)
             # Create annotated clips based on the loaded subtitles
             annotated_clips = [
-                TextClip(sub.text, fontsize=42, color='white', font='Arial')  # Added stroke color and width for better contrast
+                TextClip(sub.text, fontsize=42, color='white', font='Arial')
                 .set_position('center')
                 .set_start(sub.start.ordinal / 1000)  # Convert to seconds
                 .set_duration((sub.end.ordinal - sub.start.ordinal) / 1000)  # Set duration in seconds
