@@ -8,6 +8,7 @@ from yt_dlp import YoutubeDL
 from pathlib import Path
 import uuid
 import re  # Added import for regular expression operations
+import json  # Added import for JSON operations
 
 from dotenv import load_dotenv
 
@@ -17,7 +18,7 @@ load_dotenv()
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
-class AIShortGenerator:
+class VideoEditor:
     def __init__(self, openai_api_key):
         self.openai = OpenAI(api_key=openai_api_key)
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -67,11 +68,13 @@ class AIShortGenerator:
         except Exception as e:
             logging.error(f"Error cutting video: {e}")
 
+    # Create antoher class to handle ai generation
     async def generate_script(self, key_points, prompt_template):
         try:
             completion = self.openai.chat.completions.create(  # Async call to create chat completion
                 model="gpt-3.5-turbo-0125",
                 max_tokens=250,
+                response_format={ "type": "json_object" },
                 messages=[
                     {"role": "system", "content": f"{prompt_template['system_prompt']}"},
                     {"role": "user", "content": f"{prompt_template['user_prompt']} {key_points}"}
@@ -79,62 +82,20 @@ class AIShortGenerator:
             )
             logging.info("Script generated successfully.")
 
-            response = completion.choices[0].message.content  # Access the message content correctly
-            response = re.sub(r"(?i)Reddit question", "", response)  # Case-insensitive replacement
-            response = re.sub(r"(?i)Youtube short story", "", response)  # Case-insensitive replacement
-            return response
+            response_content = completion.choices[0].message.content  # Access the message content correctly
 
+            # Parse the response content as JSON
+            response_json = json.loads(response_content)
+            return response_json
+
+        except json.JSONDecodeError as json_err:
+            logging.error(f"Error decoding JSON: {json_err}")
+            return {}  # Return an empty dictionary on JSON decode error
         except Exception as e:
             logging.error(f"Error generating script: {e}")  # Log the error message
-            return ""  # Return an empty string on error
+            return {}  # Return an empty dictionary on error
 
-    def generate_subtitles(self, audio_file):
-        try:
-            subtitles = self.speech_to_text(audio_file)
-            srt_file = pysrt.SubRipFile()
-
-            for index, (start, end, text) in enumerate(subtitles):
-                srt_file.append(pysrt.SubRipItem(index=index + 1, start=start, end=end, text=text))
-            
-            unique_id = uuid.uuid4()
-            assets_dir = os.path.join(self.base_dir, '..', 'assets')
-            os.makedirs(assets_dir, exist_ok=True)
-            srt_path = os.path.join(assets_dir, f'subtitles_{unique_id}.srt')
-            srt_file.save(srt_path)
-            logging.info("Subtitles generated and saved successfully.")
-            return srt_path
-        except Exception as e:
-            logging.error(f"Error generating subtitles: {e}")
-
-    def speech_to_text(self, audio_file):
-        try:
-            audio_file = open(audio_file, "rb")  # Open the audio file
-            transcript = self.openai.audio.transcriptions.create(  # Use OpenAI's transcription method
-                file=audio_file,
-                model="whisper-1",
-                response_format="verbose_json",
-                timestamp_granularities=["word"]
-            )
-            subtitles = []
-            for word_info in transcript.words:  # Iterate through the words in the transcript
-                start_time = self.convert_seconds_to_srt_time(word_info.start)  # Convert start time
-                end_time = self.convert_seconds_to_srt_time(word_info.end)  # Convert end time
-                text = word_info.word.strip()  # Get the word text
-                subtitles.append((start_time, end_time, text))
-
-            logging.info("Speech-to-text transcription completed.")
-            return subtitles
-        except Exception as e:
-            logging.error(f"Error in speech-to-text transcription: {e}")
-            return []
-
-    def convert_seconds_to_srt_time(self, seconds):
-        """Convert seconds into SubRipTime for SRT formatting"""
-        millis = int((seconds % 1) * 1000)
-        mins, secs = divmod(int(seconds), 60)
-        hours, mins = divmod(mins, 60)
-        return pysrt.SubRipTime(hours, mins, secs, millis)
-
+    # Create antoher class to handle ai generation
     async def generate_voice(self, script):
         try:
             unique_id = uuid.uuid4()
@@ -144,7 +105,7 @@ class AIShortGenerator:
             
             response = self.openai.audio.speech.create(
                 model="tts-1",
-                voice="nova",
+                voice="echo",
                 input=script
             )
             response.stream_to_file(speech_file_path)
@@ -160,22 +121,20 @@ class AIShortGenerator:
             logging.error(f"Error loading subtitles: {e}")
             return []  # Return empty list on failure
 
-    def add_audio_and_captions_to_video(self, video_path, audio_path, subtitles_path):
+    def add_audio_to_video(self, video_path, audio_path) -> VideoFileClip:
         try:
             video_clip = VideoFileClip(video_path)
             audio_clip = AudioFileClip(str(audio_path))
             final_clip = video_clip.set_audio(audio_clip)
-            # Load subtitles from the SRT file
-            subtitles = self.load_subtitles(subtitles_path)
-            # Create annotated clips based on the loaded subtitles
-            annotated_clips = [
-                TextClip(sub.text, fontsize=42, color='white', font='Arial')
-                .set_position('center')
-                .set_start(sub.start.ordinal / 1000)  # Convert to seconds
-                .set_duration((sub.end.ordinal - sub.start.ordinal) / 1000)  # Set duration in seconds
-                for sub in subtitles if sub.start is not None and sub.end is not None
-            ]
-
+            
+            logging.info("Audio added to video successfully.")
+            return final_clip
+        except Exception as e:
+            logging.error(f"Error adding audio to video: {e}")
+            return None
+    
+    def crop_video_9_16(self, video_clip: VideoFileClip) -> VideoFileClip:
+        try:
             # Crop the video to TikTok format (9:16 aspect ratio)
             video_width, video_height = video_clip.size
             target_aspect_ratio = 9 / 16
@@ -184,15 +143,34 @@ class AIShortGenerator:
 
             if target_width < video_width:
                 # Center crop horizontally
-                final_clip = final_clip.crop(x_center=video_width / 2, width=target_width, height=target_height)
+                cropped_clip = video_clip.crop(x_center=video_width / 2, width=target_width, height=target_height)
+            else:
+                # If the video is already narrower than 9:16, don't crop
+                cropped_clip = video_clip
+
+            logging.info("Video cropped successfully")
+            return cropped_clip
+        except Exception as e:
+            logging.error(f"Error cropping video: {e}")
+            return None
+
+    def add_captions_to_video(self, video_clip, subtitles_clips:list) -> CompositeVideoClip:
+        try:
+            if video_clip is None:
+                raise ValueError("video_clip is None")
+
+            # Ensure subtitles_clips is a list
+            if not isinstance(subtitles_clips, list):
+                logging.warning("subtitles_clips is not a list. Converting to a list.")
+                subtitles_clips = [subtitles_clips] if subtitles_clips else []
 
             # Combine the video and subtitle clips
-            final_clip = CompositeVideoClip([final_clip] + annotated_clips)
-            #final_clip.write_videofile("result/final_video.mp4")  # Save the final video
-            logging.info("Audio and subtitles added to video successfully.")
+            final_clip = CompositeVideoClip([video_clip] + subtitles_clips)
+            logging.info("Captions added to video successfully.")
             return final_clip
         except Exception as e:
-            logging.error(f"Error adding audio and subtitles to video: {e}")
+            logging.error(f"Error adding captions to video: {e}")
+            return None
 
     def add_images_to_video(self, video_clip, images):
         """Add images to the video at specified intervals throughout the entire video duration."""
@@ -218,11 +196,45 @@ class AIShortGenerator:
                     logging.error(f"Error processing image_path: {image_path}, {e}")
             # If image_path is None, we simply don't add an image for this interval
         
-        final_clip = CompositeVideoClip(clips)
+        return CompositeVideoClip(clips)
+
+    def render_final_video(self, final_clip) -> str:
+        """Render the final video with all components added."""
         unique_id = uuid.uuid4()
         result_dir = os.path.abspath(os.path.join(self.base_dir, '../result'))
         os.makedirs(result_dir, exist_ok=True)
-        output_path = os.path.join(result_dir, f"final_video_with_images_{unique_id}.mp4")
+        output_path = os.path.join(result_dir, f"final_video_{unique_id}.mp4")
         final_clip.write_videofile(output_path)
-        logging.info("Final video with images created successfully.")
+        logging.info("Final video rendered successfully.")
         return output_path
+    
+    def cleanup_files(self, file_paths, image_paths=None):
+        """Delete temporary files and generated images to clean up the workspace."""
+        # Clean up temporary files
+        for file_path in file_paths:
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logging.info(f"Deleted temporary file: {file_path}")
+                else:
+                    logging.warning(f"File not found: {file_path}")
+            except Exception as e:
+                logging.error(f"Error deleting file {file_path}: {e}")
+        
+        # Clean up generated images
+        if image_paths:
+            for image_path in image_paths:
+                try:
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+                        logging.info(f"Deleted generated image: {image_path}")
+                    else:
+                        logging.warning(f"Image not found: {image_path}")
+                except Exception as e:
+                    logging.error(f"Error deleting image {image_path}: {e}")
+
+    
+
+## Pending stuff to do in this class:
+# - Separate audio from captions in the add_audio_and_captions_to_video method
+# - Render method separated from the add_images_to_video method

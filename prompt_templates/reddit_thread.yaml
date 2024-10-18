@@ -18,6 +18,13 @@ system_prompt: |
   - The language should be casual and relatable, as if you’re a friend sharing a story.
   - The story should begin with "I" and dive straight into the narrative, without titles or conclusions.
 
+  **Instructions for the JSON output:**
+  - The output should be a JSON object with the following structure:
+    {
+      "reddit_question": "The Reddit question text",
+      "youtube_short_story": "The YouTube short story text"
+    }
+
 user_prompt: |
   - New generated story. The story must be highly unusual and spicy, surprising listeners and hooking them into the narrative. 
   - Reddit question topic: 

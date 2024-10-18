@@ -68,7 +68,7 @@ class ImageHandler:
             return []
 
         search_results = response.json()
-        print(search_results)
+
         image_urls = [item['link'] for item in search_results.get('items', [])]  # Extract image URLs
         return image_urls
 
