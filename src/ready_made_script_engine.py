@@ -210,7 +210,7 @@ class ReadyMadeScriptGenerator:
                 story_audio_path,
                 captions_settings.get('color', 'orange'),
                 captions_settings.get('shadow_color', 'white'),
-                captions_settings.get('font_size', 40),
+                captions_settings.get('font_size', 50),
                 captions_settings.get('font', 'Dacherry.ttf')
             )
 

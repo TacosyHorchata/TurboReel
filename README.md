@@ -1,25 +1,41 @@
 # TurboReelGPT
 
-**Welcome to TurboReelGPT!** Your new buddy for creating short videos for TikTok, Instagram Reels, and YouTube Shorts. Unlike other AI video generators out there, we’re all about making your content feel real.
+**Hey there!** TurboReel is a experimental video engine that uses AI to completely automate the process of creating short videos. Checkout the [demo video](https://www.youtube.com/watch?v=CdoTjeDDrbM) to see what it can do.
 
-## What We're About
+[![Video Preview](https://i.ytimg.com/vi/CdoTjeDDrbM/hq720.jpg)](https://www.youtube.com/watch?v=CdoTjeDDrbM)
 
-Just like Midjourney changed the game for images, TurboReelGPT is here to transform how we make videos. Our mission is to help creators easily produce videos that connect with their audience on a human level.
+Let me try to explain what makes TurboReel different from other AI video generators. 
 
-- **Check This Out**: Want to see what you can create? Check out this [example video](https://youtu.be/4tFtKmXc-xE?si=KTb0MLfAYTe7eVtP).
-![Video Preview](https://i.ytimg.com/vi/4tFtKmXc-xE/hqdefault.jpg)
+Since I was a kid, I've always wanted to become a Youtuber, but editing video is hard, and not to mention you need a good PC. 
 
-## 🚀 Our Roadmap
+This is a limitation for thousands of people. Thanks to LLMs there is a lot of problems that unlocked. Video generation is one of them. In a few years, I belive that video generation will be as easy as writing an article.
 
-**Engagement**: Make videos more engaging — our one and only North Star
-   
+TurboReelGPT is my attempt at making that a reality.
+
+If you would like to see a world where anyone can make awesome videos, please consider supporting this project.
+
+[!["Buy Me A Coffee :)"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/pedroeut19)
+
+This helps support development and consumption of services like OpenAI, ElevenLabs, etc.
+
+## 🚀 Roadmap (not set in stone)
+
+- [ ] Improve story stelling
+- [ ] Improve video quality
+- [ ] Dockerize it
+- [ ] Documentation
+- [ ] Add translation feature, to reach a wider audience
+- [ ] Create more formats (Educational, Product Demo, etc)
+- [ ] Find trending audios and videos on the internet and use them to generate videos
+- [ ] Video editing software
+
 ## 💡 Getting Started
 
 Ready to dive in? Here’s how to get started with TurboReelGPT:
 
 1. **Clone the Repo**:
    ```bash
-   git clone https://github.com/yourusername/turboreelgpt.git
+   git clone https://github.com/tacosyhorchata/turboreelgpt.git
    ```
 
 2. **Head to the Project Folder**:
@@ -46,7 +62,7 @@ Ready to dive in? Here’s how to get started with TurboReelGPT:
    ```
 6. **Grab Your API Keys**: You’ll need keys for OPENAI (for generating scripts) and PEXELS (for fetching images). Get your PEXELS API key [here](https://www.pexels.com/api/key/).
 
-7. **Set Up Your Config**: Create a `config.yaml` file in the root folder. Clone `config-example.yaml` and fill it in with your API keys and desired settings. You only need to configure settings other than the API keys if you're not using the Gradio UI.
+7. **Set Up Your Config**: Create a `.env` file in the root folder. Clone `.env-example` and fill it in with your OPENAI_API_KEY and PEXELS_API_KEY.
 
 8. **Gradio UI**: Run:
    ```bash
@@ -54,7 +70,7 @@ Ready to dive in? Here’s how to get started with TurboReelGPT:
    ```
 Fill in all the inputs and generate your video!
 
-![GUI Preview](https://drive.google.com/uc?export=view&id=15xFGVslmEBnPxu-3tjQE7lMiz0KEI5hC)
+![GUI Preview](https://drive.google.com/uc?export=view&id=1t_K6zgJrJl5ATv585i1VDF6-YwJ5htI-)
 
    **Heads Up**: This project uses YT-DLP for downloading YouTube videos, and it requires cookies to work properly. Automating this in a VM might not be the best idea.
    
@@ -66,5 +82,11 @@ We’d love your help! If you’re excited to contribute to TurboReelGPT, here�
 2. **Create a New Branch** for your feature or fix.
 3. **Make Your Changes and Commit Them**.
 4. **Push Your Branch** and submit a pull request.
+5. **Wait for Review**: We’ll do our best to review your PR as soon as possible. Joining our Discord server is the best way to get in touch with us.
 
-- **Join Our Crew**: Let’s connect! Join us and other creators on our [Discord server](https://discord.gg/bby6DYsCPu). We can’t wait to see what you create!
+## 💬 Join Our Discord
+Let’s connect! Join us and other creators on our [Discord server](https://discord.gg/bby6DYsCPu)
+
+## Don't forget to star the repo! Starring helps a lot!
+
+[![Star History Chart](https://api.star-history.com/svg?repos=TacosyHorchata/TurboReelGPT&type=Date)](https://star-history.com/#TacosyHorchata/TurboReelGPT&Date)
