@@ -127,9 +127,9 @@ class ReadyMadeScriptGenerator:
                 logging.error("The video script should not be null.")
                 return {"status": "error", "message": "The video script should not be null."}
             
-            if len(video_script) > 1000:
-                logging.error("The video script should not be longer than 1000 characters.")
-                return {"status": "error", "message": "The video script should not be longer than 1000 characters."}
+            if len(video_script) > 1300:
+                logging.error("The video script should not be longer than 1300 characters.")
+                return {"status": "error", "message": "The video script should not be longer than 1300 characters."}
             
             if len(video_hook) > 80:
                 logging.error("The video hook should not be longer than 80 characters.")
@@ -205,20 +205,22 @@ class ReadyMadeScriptGenerator:
             story_video = story_video.set_audio(story_audio_clip)
             story_video = self.video_editor.crop_video_9_16(story_video)
 
+            font_size = video_width * 0.025
+
             # Generate subtitles
             story_subtitles_path, story_subtitles_clips = await self.caption_handler.process(
                 story_audio_path,
-                captions_settings.get('color', 'orange'),
-                captions_settings.get('shadow_color', 'white'),
-                captions_settings.get('font_size', 50),
-                captions_settings.get('font', 'Dacherry.ttf')
+                captions_settings.get('color', 'white'),
+                captions_settings.get('shadow_color', 'black'),
+                captions_settings.get('font_size', font_size),
+                captions_settings.get('font', 'LEMONMILK-Bold.otf')
             )
 
-            story_video = self.video_editor.add_captions_to_video(story_video, story_subtitles_clips)
             video_context = self.gpt_summary_of_script(youtube_short_story)
             story_image_paths = self.image_handler.get_images_from_subtitles(story_subtitles_path, video_context, story_audio_length) if add_images else []
             story_video = self.video_editor.add_images_to_video(story_video, story_image_paths)
             
+            story_video = self.video_editor.add_captions_to_video(story_video, story_subtitles_clips)
             # Combine clips
             combined_clips = CompositeVideoClip([
                 hook_video,

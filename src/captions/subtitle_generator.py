@@ -56,17 +56,22 @@ class SubtitleGenerator:
                 current_words.append(word_info.word.strip())
 
                 #check if current subtitle is long enough or if the next word is too long
-                if len(current_words) >= 4 or (i > 0 and word_start_time.ordinal - previous_word_end.ordinal >= 600):
-                    formatted_text = " ".join(current_words[:2]) + "\n" + " ".join(current_words[2:])
+                if len(current_words) >= 2 or (i > 0 and word_start_time.ordinal - previous_word_end.ordinal >= 600):
+                    #formatted_text = " ".join(current_words[:1]) + "\n" + " ".join(current_words[1:])
+                    formatted_text = " ".join(current_words)
                     subtitles.append((subtitle_start_time, word_end_time, formatted_text))
                     current_words = []
                     subtitle_start_time = None
 
             # Handle any remaining word
             if current_words:
-                formatted_text = " ".join(current_words[:2])
-                if len(current_words) > 2:
-                    formatted_text += "\n" + " ".join(current_words[2:])
+                # Old multi-line approach (commented out)
+                # formatted_text = " ".join(current_words[:1])
+                # if len(current_words) > 1:
+                #     formatted_text += "\n" + " ".join(current_words[1:])
+                
+                # New single-line approach
+                formatted_text = " ".join(current_words)
                 subtitles.append((subtitle_start_time, word_end_time, formatted_text))
 
             logging.info(f"Speech-to-text transcription completed.")

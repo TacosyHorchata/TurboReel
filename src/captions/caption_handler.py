@@ -18,11 +18,11 @@ class CaptionHandler:
         self.video_captioner = VideoCaptioner()
         self.default_font = "Dacherry.ttf"
 
-    async def process(self, audio_file: str, captions_color="white", shadow_color="cyan", font_size=30, font=None):
+    async def process(self, audio_file: str, captions_color="white", shadow_color="cyan", font_size=60, font=None):
         subtitles_file = await self.subtitle_generator.generate_subtitles(audio_file)
         caption_clips = self.video_captioner.generate_captions_to_video(
             subtitles_file,
-            font=None,
+            font=font,
             captions_color=captions_color,
             shadow_color=shadow_color,
             font_size=font_size

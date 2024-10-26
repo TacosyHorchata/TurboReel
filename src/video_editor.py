@@ -204,7 +204,27 @@ class VideoEditor:
         result_dir = os.path.abspath(os.path.join(self.base_dir, '../result'))
         os.makedirs(result_dir, exist_ok=True)
         output_path = os.path.join(result_dir, f"final_video_{unique_id}.mp4")
-        final_clip.write_videofile(output_path)
+        
+        # Ensure even dimensions
+        width, height = final_clip.w, final_clip.h
+        if width % 2 != 0:
+            width -= 1
+        if height % 2 != 0:
+            height -= 1
+        
+        final_clip = final_clip.resize(newsize=(width, height))
+        
+        final_clip.write_videofile(
+            output_path,
+            codec='libx264',
+            preset='veryfast',
+            ffmpeg_params=['-crf', '10', '-pix_fmt', 'yuv420p'],
+            audio_codec='aac',
+            audio_bitrate='128k',
+            fps=30
+
+        )
+        
         logging.info("Final video rendered successfully.")
         return output_path
     
@@ -238,3 +258,4 @@ class VideoEditor:
 ## Pending stuff to do in this class:
 # - Separate audio from captions in the add_audio_and_captions_to_video method
 # - Render method separated from the add_images_to_video method
+

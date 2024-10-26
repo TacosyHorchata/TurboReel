@@ -1,10 +1,7 @@
-from moviepy.editor import TextClip, CompositeVideoClip, vfx
-from PIL import Image, ImageFilter
-import numpy as np
+from moviepy.editor import TextClip, CompositeVideoClip
 import pysrt
 import logging
 import os
-from skimage import filters
 
 class VideoCaptioner:
     def __init__(self):
@@ -22,34 +19,35 @@ class VideoCaptioner:
             return None
 
     def create_shadow_text(self, txt, fontsize, font, color, shadow_color, shadow_offset, blur_color):
-        # Create the blurred shadow
+        """ # Create the blurred shadow
         blur_size = int(fontsize * 1.08)  # 10% larger than the main text
         blur_clip = TextClip(txt, fontsize=blur_size, font=font, color=blur_color, size=(1000, None), method='caption')
         blur_clip = blur_clip.set_opacity(0.15)  # Set the opacity to 15%
-        
+         """
         # Create the offset shadow
         shadow_clip = TextClip(txt, fontsize=fontsize, font=font, color=shadow_color, size=(1000, None), method='caption')
         shadow_clip = shadow_clip.set_position((shadow_offset, shadow_offset))
-        
+
         # Create the main text
         text_clip = TextClip(txt, fontsize=fontsize, font=font, color=color, size=(1000, None), method='caption')
         
         # Composite all layers
-        return CompositeVideoClip([blur_clip, shadow_clip, text_clip])
+        #return CompositeVideoClip([blur_clip, shadow_clip, text_clip])
+        return CompositeVideoClip([shadow_clip, text_clip])
 
     """ Call this function to generate the captions to video """
     def generate_captions_to_video(self, 
-                                   subtitles_path, 
+                                   subtitles_path,
+                                   font=None, 
                                    captions_color='#BA4A00', 
                                    shadow_color='white',
-                                   font_size=60,
-                                   font=None,
+                                   font_size=60
                                    ):
-        font = font or self.default_font
+        font = self.get_font_path(font) if font else self.default_font
         try:
             subtitles = subtitles_path
             subtitle_clips = []
-            shadow_offset = font_size / 30
+            shadow_offset = font_size / 10
 
             logging.info(f"Received subtitles: {type(subtitles)}")  # Debug log
 
@@ -65,9 +63,10 @@ class VideoCaptioner:
 
             for subtitle in subtitles:
                 if isinstance(subtitle, pysrt.SubRipItem):
-                    start_time, end_time, text = subtitle.start, subtitle.end, subtitle.text
+                    start_time, end_time, text = subtitle.start, subtitle.end, subtitle.text.upper()
                 elif isinstance(subtitle, tuple) and len(subtitle) == 3:
                     start_time, end_time, text = subtitle
+                    text = text.upper()
                 else:
                     logging.warning(f"Skipping invalid subtitle format: {subtitle}")
                     continue
@@ -89,7 +88,7 @@ class VideoCaptioner:
                 subtitle_clip = (shadow_text
                                  .set_start(start_seconds)
                                  .set_duration(duration)
-                                 .set_position(('center', 0.55), relative=True))
+                                 .set_position(('center', 0.4), relative=True))
                 subtitle_clips.append(subtitle_clip)
 
             logging.info(f"Generated {len(subtitle_clips)} subtitle clips")  # Debug log

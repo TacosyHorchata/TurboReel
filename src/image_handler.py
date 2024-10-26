@@ -15,6 +15,7 @@ class ImageHandler:
     def __init__(self, pexels_api_key, openai_api_key):
         self.pexels_api_key = pexels_api_key
         self.openai_api_key = openai_api_key
+        self.pixabay_api_key = os.getenv('PIXABAY_API_KEY') or ''
         self.openai = OpenAI(api_key=self.openai_api_key)
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -43,6 +44,31 @@ class ImageHandler:
 
         search_results = response.json()
         image_urls = [photo['src']['original'] for photo in search_results.get('photos', [])]  # Extract image URLs
+        return image_urls
+
+    def search_pixabay_images(self, query):
+        """Search for images using Pixabay API and return the URLs."""
+        search_url = "https://pixabay.com/api/"
+        
+        params = {
+            'key': self.pixabay_api_key,
+            'q': query,
+            'image_type': 'all',
+            'per_page': 3
+        }
+        
+        try:
+            response = requests.get(search_url, params=params)
+            response.raise_for_status()  # Raise an error for bad responses
+        except requests.exceptions.HTTPError as e:
+            logging.error(f"HTTP error occurred: {e}")  # Log the error
+            return []  # Return an empty list on error
+        except Exception as e:
+            logging.error(f"An error occurred during the request: {e}")
+            return []
+
+        search_results = response.json()
+        image_urls = [hit['largeImageURL'] for hit in search_results.get('hits', [])]  # Extract image URLs
         return image_urls
 
     def search_google_images(self, query):
@@ -172,6 +198,11 @@ class ImageHandler:
 
             try:
                 image_urls = self.search_pexels_images(refined_keyword)
+                if not image_urls:
+                    image_urls = self.search_pixabay_images(refined_keyword)
+                    logging.info(f"No images found on Pexels, searching on Pixabay: {image_urls}")
+                if not image_urls:
+                    logging.info(f"No images found on Pixabay")
             except Exception as e:
                 logging.error(f"Error searching for images: {e}")
                 image_paths.append(None)  # Add None for failed image search
