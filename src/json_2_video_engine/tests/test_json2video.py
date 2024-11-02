@@ -3,10 +3,10 @@ import os
 import asyncio
 import json
 
-# Add the parent directory to sys.path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
-from json_2_video import PyJson2Video
+from src.json_2_video_engine.json_2_video import PyJson2Video
 
 def load_json(file_path):
     with open(file_path, 'r') as f:

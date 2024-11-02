@@ -1,0 +1,105 @@
+{
+    "images": [
+      {
+        "image_id": "img_goiania_city",
+        "source_type": "prompt",
+        "source_content": "Aerial view of Goiânia, Brazil, in the 1980s",
+        "start_time": "scr_intro_content.start_time",
+        "end_time": "scr_intro_content.end_time",
+        "max_width": 1200,
+        "max_height": 700,
+        "z_index": 1,
+        "position": [50, 50],
+        "opacity": 1.0,
+        "rotation": 0
+      },
+      {
+        "image_id": "img_radiotherapy_institute",
+        "source_type": "prompt",
+        "source_content": "Abandoned radiotherapy institute building in Goiânia, Brazil",
+        "start_time": "scr_abandoned_institute.start_time",
+        "end_time": "scr_abandoned_institute.end_time",
+        "max_width": 1200,
+        "max_height": 700,
+        "z_index": 1,
+        "position": [50, 50],
+        "opacity": 1.0,
+        "rotation": 0
+      },
+      {
+        "image_id": "img_cesium_capsule",
+        "source_type": "path",
+        "source_content": "images/cesium_capsule.png",
+        "start_time": "scr_cesium_capsule.start_time",
+        "end_time": "scr_cesium_capsule.end_time",
+        "max_width": 1200,
+        "max_height": 700,
+        "z_index": 2,
+        "position": [50, 50],
+        "opacity": 1.0,
+        "rotation": 0
+      }
+    ],
+    "script": [
+      {
+        "_id":"scr_title",
+        "text":"The Goiânia Accident",
+        "voice_start_time":0,
+        "post_pause_duration":2
+      },
+      {
+        "_id": "scr_intro",
+        "text": "Chapter 1: A Fateful Discovery",
+        "voice_start_time": 0,
+        "post_pause_duration": 1
+      },
+      {
+        "_id": "scr_intro_content",
+        "text": "In September 1987, the Brazilian city of Goiânia became the site of one of the worst radiological incidents in history.",
+        "voice_start_time": 0,
+        "post_pause_duration": 0.5
+      },
+      {
+        "_id": "scr_abandoned_institute",
+        "text": "It all began at an abandoned radiotherapy institute, where a dangerous source of radiation was left behind.",
+        "voice_start_time": 0,
+        "post_pause_duration": 0.5
+      },
+      {
+        "_id": "scr_cesium_capsule",
+        "text": "Inside the abandoned building was a lead cylinder containing 1,375 curies of highly radioactive cesium-137.",
+        "voice_start_time": 0,
+        "post_pause_duration": 1
+      }
+    ],
+    "text": [
+      {
+        "_id": "txt_title",
+        "content": "The Goiânia Accident",
+        "start_time": "scr_title.voice_start_time",
+        "end_time": "scr_title.end_time",
+        "font": "Arial",
+        "font_size": 72,
+        "color": "white",
+        "position": [50, 50],
+        "z_index": 3
+      },
+      {
+        "_id": "txt_chapter1",
+        "content": "Chapter 1: A Fateful Discovery",
+        "start_time": "scr_intro.voice_start_time",
+        "end_time": "scr_intro.end_time",
+        "font": "Arial",
+        "font_size": 54,
+        "color": "white",
+        "position": [50, 50],
+        "z_index": 3
+      }
+    ],
+    "extra_args": {
+      "resolution": {
+        "width": 540,
+        "height": 960
+      }
+    }
+}

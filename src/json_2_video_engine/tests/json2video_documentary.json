@@ -1,0 +1,48 @@
+{
+  "images": [
+    {
+      "image_id": "img_oppenheimer_1",
+      "source_type": "prompt",
+      "source_content": "Image of Oppenheimer working in his lab",
+      "start_time": "scene_1.start_time",
+      "end_time": "scene_1.end_time"
+    },
+    {
+      "image_id": "img_oppenheimer_2",
+      "source_type": "prompt",
+      "source_content": "Image of Oppenheimer discussing the movie script",
+      "start_time": "scene_2.start_time",
+      "end_time": "scene_2.end_time"
+    },
+    {
+      "image_id": "img_oppenheimer_3",
+      "source_type": "prompt",
+      "source_content": "Image of the movie set with actors portraying Oppenheimer's life",
+      "start_time": "scene_3.start_time",
+      "end_time": "scene_3.end_time"
+    }
+  ],
+  "script": [
+    {
+      "_id": "scene_1",
+      "text": "The story of how the Oppenheimer movie was made starts with Oppenheimer in his lab, deeply engrossed in his work.",
+      "voice_start_time": 0
+    },
+    {
+      "_id": "scene_2",
+      "text": "As the movie concept evolved, Oppenheimer actively participated in discussions about the script, ensuring its accuracy.",
+      "voice_start_time": 0
+    },
+    {
+      "_id": "scene_3",
+      "text": "The movie set came to life with actors portraying key moments from Oppenheimer's life, capturing the essence of his journey.",
+      "voice_start_time": 0
+    }
+  ],
+  "extra_args": {
+    "resolution": {
+      "width": 540,
+      "height": 960
+    }
+  }
+}

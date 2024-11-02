@@ -1,20 +1,3 @@
-import os
-import logging
-from openai import OpenAI
-from moviepy.editor import AudioFileClip, VideoFileClip, concatenate_audioclips, CompositeAudioClip
-import pysrt
-from typing import List
-import json
-
-from src.video_editor import VideoEditor
-from src.captions.subtitle_generator import SubtitleGenerator
-from moviepy.audio.fx.all import audio_fadein, audio_fadeout
-from moviepy.video.fx.all import speedx
-
-
-openai_api_key = os.getenv("OPENAI_API_KEY")
-
-
 """ 
 
 NOT READY YET, STILL WORKING ON IT.
@@ -35,12 +18,28 @@ NOT READY YET, STILL WORKING ON IT.
 
 """
 
+import os
+import logging
+from openai import OpenAI
+from moviepy.editor import AudioFileClip, VideoFileClip, concatenate_audioclips, CompositeAudioClip
+import pysrt
+from typing import List
+import json
+
+from src.video_editor import VideoEditor
+from src.captions.subtitle_generator import SubtitleGenerator
+from moviepy.audio.fx.all import audio_fadein, audio_fadeout
+from moviepy.video.fx.all import speedx
+
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
 
 class TranslationEngine:
     def __init__(self):
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.openai_client = OpenAI(api_key=openai_api_key)
-        self.video_editor = VideoEditor(openai_api_key)
+        self.video_editor = VideoEditor()
         self.subtitle_generator = SubtitleGenerator()
 
     async def translate_video(self, video_path, target_language):

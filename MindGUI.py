@@ -4,7 +4,7 @@ from openai import OpenAI
 import os
 import logging
 from dotenv import load_dotenv
-from src.json_2_video.json_2_video import PyJson2Video  # Import the process_video function
+from src.json_2_video_engine.json_2_video import PyJson2Video  # Import the process_video function
 import asyncio
 import uuid
 

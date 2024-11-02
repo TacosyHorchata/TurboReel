@@ -18,8 +18,10 @@ load_dotenv()
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
+openai_api_key = os.getenv('OPENAI_API_KEY')
+
 class VideoEditor:
-    def __init__(self, openai_api_key):
+    def __init__(self):
         self.openai = OpenAI(api_key=openai_api_key)
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -69,15 +71,15 @@ class VideoEditor:
             logging.error(f"Error cutting video: {e}")
 
     # Create antoher class to handle ai generation
-    async def generate_script(self, key_points, prompt_template):
+    async def generate_script(self, topic, prompt_template):
         try:
             completion = self.openai.chat.completions.create(  # Async call to create chat completion
                 model="gpt-3.5-turbo-0125",
-                max_tokens=250,
+                max_tokens=400,
                 response_format={ "type": "json_object" },
                 messages=[
                     {"role": "system", "content": f"{prompt_template['system_prompt']}"},
-                    {"role": "user", "content": f"{prompt_template['user_prompt']} {key_points}"}
+                    {"role": "user", "content": f"{prompt_template['user_prompt']} {topic}"}
                 ]
             )
             logging.info("Script generated successfully.")
@@ -95,6 +97,105 @@ class VideoEditor:
             logging.error(f"Error generating script: {e}")  # Log the error message
             return {}  # Return an empty dictionary on error
 
+    async def gpt_summary_of_script(self, video_script: str) -> str:
+        try:
+            completion = self.openai.chat.completions.create(
+                model="gpt-3.5-turbo-0125",
+                temperature=0.25,
+                max_tokens=250,
+                messages=[
+                    {"role": "user", "content": f"Summarize the following video script; it is very important that you keep it to one line. \n Script: {video_script}"}
+                ]
+            )
+            logging.info("Script generated successfully.")
+            return completion.choices[0].message.content
+        except Exception as e:
+            logging.error(f"Error generating script summary: {e}")
+            return ""  # Return an empty string on error
+    
+    async def gpt_image_prompt_from_scene(self, scene, script_summary):
+        try:
+            completion = self.openai.chat.completions.create( 
+                model="gpt-3.5-turbo",  # Updated model name
+                temperature=0.25,
+                messages = [
+                    {
+                        'role': 'system',
+                        'content': """ You are a specialized prompt generation system for video automation, tasked with generating image prompts that are visually engaging and suited to the provided scene text. Focus on capturing vibrant, lively details to make each image compelling and relatable.
+
+                        **Guidelines:**
+                        1. Write concise prompts that prioritize the details in the scene text, adding any vivid or relevant elements to enhance the scene.
+                        2. Use specific sensory details (like lighting, atmosphere, or motion) to bring each image to life, avoiding overly corporate or static imagery.
+                        3. Keep prompts engaging by emphasizing emotions, actions, or vivid backgrounds that match the scene.
+                        4. Avoid including any text within the image; focus solely on describing the visual content.
+
+                        **Example outputs:**
+                        - "Three friends laughing and dancing on a beach at sunset in California, waves in the background"
+                        - "Kids in fun Halloween costumes, smiling and posing excitedly at a colorful McDonald's"
+                        - "Friends chatting and laughing in a lively bar, while a dramatic argument unfolds nearby" 
+
+
+                        **Output Format:**
+                        Return the result as a JSON object structured as follows:
+                        {
+                            "image_prompt": "image prompt here"
+                        }
+                        """
+                    },
+                    {
+                        'role': 'user',
+                        'content': f'Scene script: "{scene}"\nScript summary: {script_summary}'
+                    }
+                ],
+                max_tokens=200
+            )
+            response_json = json.loads(completion.choices[0].message.content)
+            return response_json["image_prompt"]
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error calling OpenAI API: {e}")
+            return scene  
+        
+    async def create_scenes_from_script(self, script):
+        system_prompt = """ You are a scene creation system for a video automation tool. Your task is to break down a given script into a sequence of concise, well-structured scenes to be used for generating images and audio in the video.
+
+            **Guidelines:**
+            1. Divide the script into self-contained scenes, each 15-20 words long.
+            2. Preserve the original text and structure of the script.
+            3. Ensure each scene reads naturally on its own to enable seamless image and audio generation without abrupt transitions.
+            4. Output each scene as a simple array item containing only the scene text.
+            Example:
+            [
+                "In March 2024, the world was shocked to learn that the legendary explorer, Sir Edmund Hillary, had passed away at the age of 93.",
+                "The news of his death sent shockwaves around the globe, as people remembered his incredible achievements and the indomitable spirit that defined his life.",
+                "Hillary's journey to the summit of Mount Everest in 1953, at the age of 33, had captured the hearts of millions and inspired generations to push beyond their limits."
+            ]
+
+            **Output Format:**
+            Return the output as a JSON object with the following structure:
+            {
+                "scenes": [
+                    "text of scene 1",
+                    "text of scene 2",
+                    "text of scene 3"
+                ]
+            }
+        """
+        try:
+            completion = self.openai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                temperature=0.25,
+                response_format={ "type": "json_object" },
+                max_tokens=2500,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Script: {script}"}
+                ]
+            )
+            response_json = json.loads(completion.choices[0].message.content)
+            return response_json["scenes"]
+        except Exception as e:
+            logging.error(f"Error creating scenes from script: {e}")
+            return script
     # Create antoher class to handle ai generation
     async def generate_voice(self, script):
         try:

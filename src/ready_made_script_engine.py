@@ -23,7 +23,7 @@ openai = OpenAI(api_key=openai_api_key)
 
 class ReadyMadeScriptGenerator:
     def __init__(self):
-        self.video_editor: VideoEditor = VideoEditor(openai_api_key)
+        self.video_editor: VideoEditor = VideoEditor()
         self.image_handler: ImageHandler = ImageHandler(pexels_api_key, openai_api_key)
         self.caption_handler: CaptionHandler = CaptionHandler()
 

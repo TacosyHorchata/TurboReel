@@ -5,6 +5,7 @@ import os
 import re
 from openai import OpenAI 
 import math
+import time
 
 from dotenv import load_dotenv  # To load environment variables
 
@@ -18,6 +19,50 @@ class ImageHandler:
         self.pixabay_api_key = os.getenv('PIXABAY_API_KEY') or ''
         self.openai = OpenAI(api_key=self.openai_api_key)
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    def generate_image_pollinations(self, query, width=1024, height=1024, model=None, seed=None, nologo=False, private=True, enhance=False, timeout=15):
+        """Generate an image using Pollinations AI API
+        
+        Args:
+            query (str): Text description of the image to generate
+            width (int, optional): Width of generated image. Defaults to 1024
+            height (int, optional): Height of generated image. Defaults to 1024
+            model (str, optional): Model to use for generation
+            seed (int, optional): Seed for reproducible results
+            nologo (bool, optional): Turn off logo rendering. Defaults to False
+            private (bool, optional): Prevent image from appearing in public feed. Defaults to True
+            enhance (bool, optional): Enable prompt enhancing via LLM. Defaults to False
+            timeout (int, optional): Maximum time to wait for image generation in seconds. Defaults to 15
+        
+        Returns:
+            list: List containing the generated image URL if successful, empty list otherwise
+        """
+        # Build query parameters
+        params = {
+            'width': width,
+            'height': height,
+            'nologo': str(nologo).lower(),
+            'private': str(private).lower(),
+            'enhance': str(enhance).lower()
+        }
+        if model:
+            params['model'] = model
+        if seed is not None:
+            params['seed'] = seed
+
+        # URL encode the prompt
+        encoded_query = requests.utils.quote(query)
+        generate_url = f"https://image.pollinations.ai/prompt/{encoded_query}"
+
+        try:
+            full_url = requests.Request('GET', generate_url, params=params).prepare().url
+            response = requests.get(full_url, timeout=timeout)
+            if response.status_code == 200:
+                return [full_url]
+            return []
+        except Exception as e:
+            logging.error(f"Error generating image URL: {e}")
+            return []
 
     def search_pexels_images(self, query):
         """Search for images using Pexels API and return the URLs."""
@@ -197,9 +242,14 @@ class ImageHandler:
             logging.info(f"Searching image for keywords: {refined_keyword}")
 
             try:
-                image_urls = self.search_pexels_images(refined_keyword)
+                ## Search for images using first Pollinations API
+                image_urls = self.generate_image_pollinations(refined_keyword)
                 if not image_urls:
-                    image_urls = self.search_pixabay_images(refined_keyword)
+                    ## Search for images using Pexels API
+                    image_urls = self.search_pexels_images(refined_keyword)
+                    if not image_urls:
+                        ## Search for images using Pixabay API
+                        image_urls = self.search_pixabay_images(refined_keyword)
                     logging.info(f"No images found on Pexels, searching on Pixabay: {image_urls}")
                 if not image_urls:
                     logging.info(f"No images found on Pixabay")

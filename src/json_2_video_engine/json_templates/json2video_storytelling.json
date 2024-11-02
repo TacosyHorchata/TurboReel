@@ -1,0 +1,36 @@
+{
+    "images": [
+        {
+            "image_id": "img_background_1",
+            "source_type": "prompt",
+            "source_content": "[short description of the background]",
+            "start_time": "scene_1.start_time",
+            "end_time": "scene_1.end_time"
+        },
+        {
+            "image_id": "img_background_2",
+            "source_type": "path",
+            "source_content": "images/background_2.png",
+            "start_time": "scene_2.start_time",
+            "end_time": "scene_2.end_time"
+        }
+    ],
+    "script": [
+        {
+            "_id": "scene_1",
+            "text": "Your story begins here...",
+            "voice_start_time": 0 
+        },
+        {
+            "_id": "scene_2",
+            "text": "Your story continues here...",
+            "voice_start_time": 0
+        }
+    ],
+    "extra_args": {
+        "resolution": {
+            "width": 540,
+            "height": 960
+        }
+    }
+}

@@ -1,135 +1,29 @@
 import json
 import os
 import logging
-from moviepy.editor import VideoFileClip, ImageClip, AudioFileClip, TextClip, CompositeVideoClip, CompositeAudioClip
+import uuid
+import math
+
+from moviepy.editor import VideoFileClip, ImageClip, AudioFileClip, TextClip, CompositeVideoClip, CompositeAudioClip, ColorClip, concatenate_audioclips
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 from .utils.llm_calls import generate_voice
-from .utils.images_generation import search_pexels_images, search_pixabay_images, download_image
+from .utils.images_generation import search_pexels_images, search_pixabay_images, download_image, generate_image_pollinations
 
-"""
-Example of the json file:
-
-
-{
-    "videos": [
-        {
-            "video_path": "path/to/video.mp4",
-            "start_time": 0,
-            "end_time": 10,
-            "max_width": 1920,
-            "max_height": 1080,
-            "z_index": 1,
-            "position": [0, 0],
-            "opacity": 1.0,
-            "volume": 1.0,
-            "order": 1
-        },
-        {
-            "video_path": "path/to/video2.mp4",
-            "start_time": 10,
-            "end_time": 20,
-            "max_width": 960,
-            "max_height": 540,
-            "z_index": 1,
-            "position": [100, 100],
-            "opacity": 0.8,
-            "volume": 0.5,
-            "order": 2
-        }
-    ],
-    "images": [
-        {
-            "image_id": "img_1234567890",
-            "source_type": "path", # "path", "url", "prompt"
-            "source_content": "path/to/image.png", # path to the image file or url to the image or prompt to generate the image
-            "start_time": 0, 
-            "end_time": 10, 
-            "max_width": 500,
-            "max_height": 300,
-            "z_index": 3,
-            "position": [50, 50],
-            "opacity": 1.0,
-            "rotation": 0
-        }
-    ],
-    "audio": [
-        {
-            "_id": "aud_1234567890",
-            "audio_path": "path/to/audio.mp3",
-            "start_time": 0,
-            "end_time": 10,
-            "volume": 0.2,
-        }
-    ],
-    "script": [
-        {
-            "_id": "scr_1234567890",
-            "text": "Hello, world!",
-            "voice_start_time": 0,
-            "post_pause_duration": 0
-        },
-        {
-            "_id": "scr_1234567891",
-            "text": "This is an AI video editor!",
-            "start_time": "scr_1234567890.end_time"
-        },
-        {
-            "_id": "scr_1234567892",
-            "text": "Also this is a test!",
-            "start_time": "scr_1234567891.end_time"
-        }
-    ],
-    "text": [
-        {
-            "_id": "txt_1234567890",
-            "text": "Hello, world!",
-            "start_time": 0,
-            "end_time": "scr_1234567890.end_time",
-            "font": "Arial",
-            "font_size": 48,
-            "color": "white",
-            "position": [50, 50],
-            "z_index": 4
-        }
-    ],
-    "extra_args": {
-        "resolution": {
-            "width": 1920,
-            "height": 1080
-        },
-        "captions": {
-            "enabled": false,
-            "language": "en",
-            "font": "Arial",
-            "font_size": 24,
-            "color": "white",
-            "background_color": "black",
-            "background_opacity": 0.7,
-            "position": [50, 50],
-            "align": "center",
-            "max_lines": 1,
-            "words_per_line": 2
-        },
-        "audio_language": "en",
-        "voice_id": "alloy",
-        "background_color": "black",
-        "output_format": "mp4"
-    }
-}
-
-"""
-
+from ..captions.caption_handler import CaptionHandler
 
 class PyJson2Video:
+
     def __init__(self, json_input, output_video_path: str):
         self.json_input = json_input
         self.output_video_path = output_video_path
         self.data = None
         self.video_clips = []
         self.audio_clips = []
+        self.caption_handler = CaptionHandler()
+        self.temp_files = []  # Add this to track all temporary files
 
     async def convert(self):
         try:
@@ -142,10 +36,19 @@ class PyJson2Video:
             
             extra_args = self.parse_extra_args()
             
-            return self._create_final_clip(extra_args)
+            return await self._create_final_clip(extra_args)
         except Exception as e:
             logger.error(f"An error occurred during conversion: {str(e)}")
             raise
+        finally:
+            # Clean up all temporary files
+            for temp_file in self.temp_files:
+                try:
+                    if os.path.exists(temp_file):
+                        os.remove(temp_file)
+                        logger.debug(f"Removed temporary file: {temp_file}")
+                except OSError as e:
+                    logger.warning(f"Failed to remove temporary file {temp_file}: {e}")
 
     def _load_json(self):
         try:
@@ -213,33 +116,41 @@ class PyJson2Video:
         max_width, max_height = resolution['width'], resolution['height']
 
         for image in self.data.get('images', []):
-            source_type = image.get('source_type')
-            # check that the source_type is valid
-            if source_type not in ['path', 'url', 'prompt']:
-                source_type = 'prompt'
+            source_type = image.get('source_type', 'prompt')
             
             try:
+                # Get image source
+                image_source = None
+                image_urls = []
+                
                 if source_type == 'path':
                     image_source = image['source_content']
                 elif source_type == 'prompt':
-                    # Generate the image
-                    try:
-                        image_url = search_pexels_images(image['source_content'])
-                        if not image_url:
-                            image_url = search_pixabay_images(image['source_content'])
-                        logger.info(f"Image URL: {image_url}")
-                        if not image_url:
-                            raise ValueError("No image URL returned from search_pexels_images")
-                        image_source = download_image(image_url)
-                    except Exception as e:
-                        logger.error(f"Error searching or downloading image: {str(e)}")
-                        continue  # Skip this image and move to the next one
+                    query = image['source_content']
+                    # Try different image sources in sequence
+                    image_urls = generate_image_pollinations(query)
+                    if not image_urls:
+                        logger.info("Trying Pexels as fallback...")
+                        image_urls = search_pexels_images(query)
+                    if not image_urls:
+                        logger.info("Trying Pixabay as final fallback...")
+                        image_urls = search_pixabay_images(query)
+                    
+                    if image_urls:
+                        image_source = download_image(image_urls[0])
+                        if image_source:
+                            self.temp_files.append(image_source)  # Track downloaded image
+                    else:
+                        logger.error(f"No images found for prompt: {query}")
+                        continue
                 elif source_type == 'url':
-                    # Download the image
                     image_source = download_image(image['source_content'])
+                    if image_source:
+                        self.temp_files.append(image_source)  # Track downloaded image
 
+                # Create and process the image clip
                 clip = ImageClip(image_source)
-
+                
                 # Handle 'full' argument and determine target dimensions
                 if image.get('max_width') == 'full':
                     target_width = max_width
@@ -251,14 +162,14 @@ class PyJson2Video:
                 else:
                     target_height = min(int(image.get('max_height', max_height)), max_height)
 
-                # Calculate the scaling factor to maintain aspect ratio
-                width_ratio = target_width / clip.w
-                height_ratio = target_height / clip.h
+                # Calculate the scaling factor to maintain aspect ratio with 10% zoom
+                width_ratio = (target_width / clip.w) * 1.1  # 10% zoom
+                height_ratio = (target_height / clip.h) * 1.1  # 10% zoom
                 scale_factor = min(width_ratio, height_ratio)
 
-                # Resize the clip maintaining aspect ratio
-                new_width = int(clip.w * scale_factor)
-                new_height = int(clip.h * scale_factor)
+                # Resize the clip with zoom
+                new_width = math.ceil(clip.w * scale_factor)
+                new_height = math.ceil(clip.h * scale_factor)
                 clip = clip.resize(width=new_width, height=new_height)
                 
                 # Handle position
@@ -277,9 +188,9 @@ class PyJson2Video:
                     logger.warning(f"Invalid position for image {image.get('image_path')}: {position}")
                     clip = clip.set_position('center')
 
-                clip = clip.set_opacity(float(image['opacity']))
+                clip = clip.set_opacity(float(image.get('opacity', 1.0)))
                 if 'rotation' in image:
-                    clip = clip.rotate(float(image['rotation']))
+                    clip = clip.rotate(float(image.get('rotation', 0)))
                 
                 start_time = self._get_time(image, 'start_time')
                 end_time = self._get_time(image, 'end_time')
@@ -289,12 +200,16 @@ class PyJson2Video:
                 self.video_clips.append(clip)
                 logger.info(f"Image {image.get('source_content')} added to video clips, start time: {start_time}, end time: {end_time}")
             except Exception as e:
-                logger.error(f"Error processing image {image.get('source_content')}: {str(e)}")
-                continue  # Skip this image and move to the next one
+                logger.error(f"Error processing image {image.get('image_id', 'unknown')}: {str(e)}")
+                continue
 
     def parse_audio(self):
         for audio in self.data.get('audio', []):
             try:
+                # If the audio is a temporary file (e.g., downloaded or generated)
+                if audio.get('is_temp', False):
+                    self.temp_files.append(audio['audio_path'])
+                
                 clip = AudioFileClip(audio['audio_path'])
                 #clip = clip.subclip(float(audio['start_time']), float(audio['end_time']))
                 clip = clip.volumex(float(audio['volume']))
@@ -319,6 +234,7 @@ class PyJson2Video:
         for index, script in enumerate(self.data.get('script', [])):
             try:
                 audio_path = await generate_voice(script['text'])
+                self.temp_files.append(audio_path)  # Track generated voice audio
                 script_clip = AudioFileClip(audio_path)
                 
                 # Determine start time based on the previous end_time script item
@@ -362,12 +278,29 @@ class PyJson2Video:
 
         for text in self.data.get('text', []):
             try:
+                
+                content = text.get('content')
+                font = text.get('font', 'Arial')
+                size = (int(max_width * 0.8), None)
+                color = text.get('color', 'white')
+                fontsize = min(int(text.get('font_size', int(max_height * 0.06))), int(max_height * 0.06))
+                shadow_color = text.get('shadow_color', 'black')
+                shadow_offset = fontsize / 15
+
                 clip = TextClip(
-                    text['content'],
-                    fontsize=int(text['font_size']),
-                    font=text['font'],
-                    color=text['color']
+                    content,
+                    size=size,
+                    fontsize=fontsize,
+                    font=font,
+                    color=color,
+                    method='caption',
+                    align='center'
                 )
+                shadow_clip = TextClip(content, fontsize=fontsize, font=font, color=shadow_color, size=size, method='caption')
+                shadow_clip = shadow_clip.set_position((shadow_offset, shadow_offset))
+                
+                # Composite all layers
+                composite_clip = CompositeVideoClip([shadow_clip, clip])
                 
                 # Handle position
                 position = text.get('position', [50, 50])  # Default to center if not specified
@@ -378,19 +311,19 @@ class PyJson2Video:
                         
                     # Adjust position to center the text
                     center_x = rel_x - clip.w / 2
-                    center_y = rel_y - clip.h / 2
+                    center_y = rel_y - composite_clip.h / 2
                         
-                    clip = clip.set_position((center_x, center_y))
+                    composite_clip = composite_clip.set_position((center_x, center_y))
                 else:
                     logger.warning(f"Invalid position for script text: {text.get('text')}: {position}")
-                    clip = clip.set_position('center')
+                    composite_clip = composite_clip.set_position('center')
   
                 start_time = self._get_time(text, 'start_time')
                 end_time = self._get_time(text, 'end_time')
                 
-                clip = clip.set_start(start_time).set_duration(end_time - start_time)
+                composite_clip = composite_clip.set_start(start_time).set_duration(end_time - start_time)
                 
-                self.video_clips.append(clip)
+                self.video_clips.append(composite_clip)
                 logger.info(f"Text {text.get('content')} added to video clips, start time: {start_time}, end time: {end_time}")
             except Exception as e:
                 logger.error(f"Error processing script text: {text.get('text')}: {str(e)}")
@@ -404,11 +337,63 @@ class PyJson2Video:
             logger.error(f"Error parsing extra arguments: {str(e)}")
             raise
 
-    def _create_final_clip(self, extra_args:dict) -> str:
+    async def _create_final_clip(self, extra_args:dict) -> str:
+        temp_files = []  # Track temporary files for cleanup
         try:
-            # Create the final composite video
             resolution = extra_args.get('resolution', {'width': 1920, 'height': 1080})
-            final_clip = CompositeVideoClip(self.video_clips, size=(resolution['width'], resolution['height']))
+            background_color = extra_args.get('background_color', [249, 249, 249])
+            captions_settings = extra_args.get('captions', {})
+            
+            # If background_color is a string, convert it to RGB
+            if isinstance(background_color, str):
+                if background_color.lower() == 'white':
+                    background_color = [255, 255, 255]
+                elif background_color.lower() == 'black':
+                    background_color = [0, 0, 0]
+            
+            # Create a blank background clip if no video clips exist
+            if not self.video_clips:
+                logger.warning("No video clips found, creating blank background clip")
+                # Calculate duration from audio clips or use default
+                duration = max([clip.end for clip in self.audio_clips]) if self.audio_clips else 10
+                blank_clip = ColorClip(
+                    size=(resolution['width'], resolution['height']),
+                    color=background_color,
+                    duration=duration
+                )
+                self.video_clips.append(blank_clip)
+            
+            # Process captions for all script audio clips
+            if captions_settings.get('enabled', False):
+                script_audio_clips = [clip for clip in self.audio_clips if hasattr(clip, 'filename')]
+                if script_audio_clips:
+                    # Concatenate all audio clips
+                    final_audio = concatenate_audioclips(script_audio_clips)
+                    
+                    # Save the concatenated audio temporarily
+                    temp_audio_path = os.path.join(os.path.dirname(__file__), 'assets', f"temp_combined_audio_{uuid.uuid4()}.wav")
+                    temp_files.append(temp_audio_path)  # Track for cleanup
+                    final_audio.write_audiofile(temp_audio_path)
+                    
+                    # Generate captions
+                    subtitles_path, subtitle_clips = await self.caption_handler.process(
+                        temp_audio_path,
+                        captions_settings.get('color', 'white'),
+                        captions_settings.get('background_color', 'black'),
+                        captions_settings.get('font_size', resolution['height'] * 0.05),
+                        captions_settings.get('font', 'LEMONMILK-Bold.otf'),
+                        resolution['width']
+                    )
+                    if subtitles_path:
+                        temp_files.append(subtitles_path)  # Track for cleanup
+                    
+                    self.video_clips.extend(subtitle_clips)
+            
+            final_clip = CompositeVideoClip(
+                self.video_clips,
+                size=(resolution['width'], resolution['height']),
+                bg_color=background_color
+            )
             
             # Add audio to the final clip
             if self.audio_clips:
@@ -423,11 +408,31 @@ class PyJson2Video:
                 preset='veryfast',
                 audio_codec='aac'
             )
+
+            # Close all clips to free up resources
+            final_clip.close()
+            if hasattr(final_clip, 'audio') and final_clip.audio is not None:
+                final_clip.audio.close()
+            
+            # Close all source clips
+            for clip in self.video_clips:
+                clip.close()
+            for clip in self.audio_clips:
+                clip.close()
+
             return self.output_video_path
         except Exception as e:
             logger.error(f"Error creating final clip: {str(e)}")
             raise
-    
+        finally:
+            # Clean up all temporary files
+            for temp_file in temp_files:
+                try:
+                    if os.path.exists(temp_file):
+                        os.remove(temp_file)
+                        logger.debug(f"Removed temporary file: {temp_file}")
+                except OSError as e:
+                    logger.warning(f"Failed to remove temporary file {temp_file}: {e}")
     
     def _get_time(self, asset, time_key: str) -> float:
         time_value = asset.get(time_key)

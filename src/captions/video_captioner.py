@@ -18,22 +18,23 @@ class VideoCaptioner:
             logging.warning(f"Font file {font_name} not found. Using default system font.")
             return None
 
-    def create_shadow_text(self, txt, fontsize, font, color, shadow_color, shadow_offset, blur_color):
+    def create_shadow_text(self, txt, fontsize, font, color, shadow_color, shadow_offset, blur_color, width):
         """ # Create the blurred shadow
         blur_size = int(fontsize * 1.08)  # 10% larger than the main text
         blur_clip = TextClip(txt, fontsize=blur_size, font=font, color=blur_color, size=(1000, None), method='caption')
         blur_clip = blur_clip.set_opacity(0.15)  # Set the opacity to 15%
          """
+        
         # Create the offset shadow
-        shadow_clip = TextClip(txt, fontsize=fontsize, font=font, color=shadow_color, size=(1000, None), method='caption')
-        shadow_clip = shadow_clip.set_position((shadow_offset, shadow_offset))
+        #shadow_clip = TextClip(txt, fontsize=fontsize, font=font, color=shadow_color, size=(width, None), method='caption')
+        #shadow_clip = shadow_clip.set_position((shadow_offset, shadow_offset))
 
         # Create the main text
-        text_clip = TextClip(txt, fontsize=fontsize, font=font, color=color, size=(1000, None), method='caption')
+        text_clip = TextClip(txt, fontsize=fontsize*1.1, font=font, color=color, size=(width*0.8, None), method='caption', stroke_color=shadow_color, stroke_width=fontsize/15)
         
         # Composite all layers
         #return CompositeVideoClip([blur_clip, shadow_clip, text_clip])
-        return CompositeVideoClip([shadow_clip, text_clip])
+        return CompositeVideoClip([text_clip])
 
     """ Call this function to generate the captions to video """
     def generate_captions_to_video(self, 
@@ -41,7 +42,8 @@ class VideoCaptioner:
                                    font=None, 
                                    captions_color='#BA4A00', 
                                    shadow_color='white',
-                                   font_size=60
+                                   font_size=60,
+                                   width=540
                                    ):
         font = self.get_font_path(font) if font else self.default_font
         try:
@@ -79,6 +81,7 @@ class VideoCaptioner:
                     shadow_color=shadow_color, 
                     shadow_offset=shadow_offset,
                     blur_color='black',
+                    width=width
                 )
                 
                 start_seconds = start_time.ordinal / 1000 if hasattr(start_time, 'ordinal') else start_time
