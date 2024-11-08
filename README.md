@@ -12,12 +12,6 @@ This is a limitation for thousands of people. Thanks to LLMs there is a lot of p
 
 TurboReelGPT is my attempt at making that a reality.
 
-If you would like to see a world where anyone can make awesome videos, please consider supporting this project.
-
-[!["Buy Me A Coffee :)"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/pedroeut19)
-
-This helps support development and consumption of services like OpenAI, ElevenLabs, etc.
-
 ## 📅 26-10-2024: Launched the Alpha version of Mind 🧠, The AI Youtuber.
 
 Read more about it [here](https://docs.turboreelgpt.tech/blog/how-we-built-mind-an-ai-youtuber-that-creates-500-videos-per-day-on-your-laptop2024-10-24/).
